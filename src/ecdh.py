@@ -1,7 +1,7 @@
 # Implementation of ECDH Key exchange 
 import os 
 from ecc import scalar_multiplication
-from Crypto.Util.number import bytes_to_long, long_to_bytes
+from Crypto.Util.number import bytes_to_long
 
 # Curve parameters for secp192r1 (P-192)
 p = int('fffffffffffffffffffffffffffffffeffffffffffffffff', 16)
@@ -23,8 +23,8 @@ def generate_key_pair():
     }
 
 def compute_shared_key(privateKey, publicKey):
-    privateKey = int(privateKey, 16) if isinstance(privateKey, str) else privateKey
-    publicKey = (int(publicKey[0], 16), int(publicKey[1], 16)) if isinstance(publicKey[0], str) else publicKey
+    privateKey = int(privateKey, 16) 
+    publicKey = (int(publicKey[0], 16), int(publicKey[1], 16))
     sharedPoint = scalar_multiplication(privateKey, publicKey, p, a)
     return hex(sharedPoint[0])
 
