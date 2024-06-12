@@ -35,7 +35,6 @@ def tent_map(length, initial_value1, initial_value2, slope):
         else: 
             sequence1[i] = slope * (1- sequence1[i-1])
 
-
         # Coupling 
         if sequence2[i-1] < 0.5: 
             sequence2[i] = slope * (sequence2[i-1] + alpha * sequence1[i-1]) % 1
@@ -44,25 +43,37 @@ def tent_map(length, initial_value1, initial_value2, slope):
 
     return sequence1, sequence2
 
-img = cv2.imread('../images/sample/PII.png', cv2.IMREAD_GRAYSCALE)
-if img is None: 
-    raise FileNotFoundError("Image file not found at specified path")
+def encrypt(pixels, chaotic_sequence1, chaotic_sequence2, shape): 
+    encrypted_pixels = (pixels + (chaotic_sequence1 * 255).astype(int) + (chaotic_sequence2 * 255).astype(int)) % 256
+    return encrypted_pixels.reshape(shape)
 
-pixels = img.flatten()
-initial_value1, initial_value2, slope = init_tent_map_params(shared_key_sender)
-chaotic_sequence1, chaotic_sequence2 = tent_map(len(pixels), initial_value1, initial_value2, slope)
-
-# Encrypt 
-encrypted_pixels = (pixels + (chaotic_sequence1 * 255).astype(int) + (chaotic_sequence2 * 255).astype(int)) % 256
-encrypted_image = encrypted_pixels.reshape(img.shape)
-
-cv2.imwrite('../images/encrypted/PII_encrypted.png', encrypted_image)
-# Decrypt 
-
-encrypted_image_loaded = cv2.imread('../images/encrypted/PII_encrypted.png', cv2.IMREAD_GRAYSCALE)
-shape = encrypted_image_loaded.shape 
-decrypted_pixels = (encrypted_image_loaded.flatten() - (chaotic_sequence1 * 255).astype(int) - (chaotic_sequence2 * 255).astype(int)) % 256
-decrypted_image = decrypted_pixels.reshape(shape)
+def decrypt(pixels, chaotic_sequence1, chaotic_sequence2, shape): 
+    decrypted_pixels = (pixels - (chaotic_sequence1 * 255).astype(int) - (chaotic_sequence2 * 255).astype(int)) % 256
+    return decrypted_pixels.reshape(shape)
 
 
-cv2.imwrite('../images/decrypted/PII_decrypted.png', decrypted_image)
+if __name__ == "__main__": 
+
+    # Encrypt 
+    img = cv2.imread('../images/sample/PII.png', cv2.IMREAD_GRAYSCALE)
+    if img is None: 
+        raise FileNotFoundError("Image file not found at specified path")
+
+    pixels = img.flatten()
+    initial_value1, initial_value2, slope = init_tent_map_params(shared_key_sender)
+    chaotic_sequence1, chaotic_sequence2 = tent_map(len(pixels), initial_value1, initial_value2, slope)
+
+    encrypted_image = encrypt(pixels, chaotic_sequence1, chaotic_sequence2, img.shape)
+
+    cv2.imwrite('../images/encrypted/PII_encrypted.png', encrypted_image)
+
+    # Decrypt 
+    
+    encrypted_image_loaded = cv2.imread('../images/encrypted/PII_encrypted.png', cv2.IMREAD_GRAYSCALE)
+    d_pixels = encrypted_image_loaded.flatten()
+    d_init_val1, d_init_val2, d_slope = init_tent_map_params(shared_key_receiver)
+    d_chaotic_sequence1, d_chaotic_sequence2 = tent_map(len(d_pixels), d_init_val1, d_init_val2, d_slope)
+    decrypted_image = decrypt(d_pixels, d_chaotic_sequence1, d_chaotic_sequence2, encrypted_image_loaded.shape)
+
+
+    cv2.imwrite('../images/decrypted/PII_decrypted.png', decrypted_image)
