@@ -1,6 +1,7 @@
 # Implementation of Coupled Tent Maps 
 import numpy as np 
 import cv2 
+import time 
 from ecdh import generate_key_pair, compute_shared_key 
 
 # Initial parameters using shared key through ECDH key exchange
@@ -60,10 +61,15 @@ if __name__ == "__main__":
         raise FileNotFoundError("Image file not found at specified path")
 
     pixels = img.flatten()
+
+    start_time_encryption = time.time()
     initial_value1, initial_value2, slope = init_tent_map_params(shared_key_sender)
     chaotic_sequence1, chaotic_sequence2 = tent_map(len(pixels), initial_value1, initial_value2, slope)
 
     encrypted_image = encrypt(pixels, chaotic_sequence1, chaotic_sequence2, img.shape)
+    encryption_time = time.time() - start_time_encryption
+
+    print(f"Encryption time: {encryption_time:.2f} seconds")
 
     cv2.imwrite('../images/encrypted/PII_encrypted.png', encrypted_image)
 
@@ -71,9 +77,12 @@ if __name__ == "__main__":
     
     encrypted_image_loaded = cv2.imread('../images/encrypted/PII_encrypted.png', cv2.IMREAD_GRAYSCALE)
     d_pixels = encrypted_image_loaded.flatten()
+
+    start_time_decryption = time.time()
     d_init_val1, d_init_val2, d_slope = init_tent_map_params(shared_key_receiver)
     d_chaotic_sequence1, d_chaotic_sequence2 = tent_map(len(d_pixels), d_init_val1, d_init_val2, d_slope)
     decrypted_image = decrypt(d_pixels, d_chaotic_sequence1, d_chaotic_sequence2, encrypted_image_loaded.shape)
-
+    decryption_time = time.time() - start_time_decryption
+    print(f"Decryption time: {decryption_time:.2f} seconds")
 
     cv2.imwrite('../images/decrypted/PII_decrypted.png', decrypted_image)
